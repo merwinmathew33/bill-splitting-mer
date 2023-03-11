@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debt Simplification</title>
+</head>
+<body>
+    <h1>Debt Simplification</h1>
+    <ul>
+        {% for user, debt in debts.items() %}
+            <li>{{ user }} owes {{ debt }}</li>
+        {% endfor %}
+    </ul>
+    <form method="post" action="/reset-balance">
+        <input type="submit" value="Settle Debts and Reset Balance">
+    </form>
+</body>
+</html>

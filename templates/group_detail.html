@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Group Detail</title>
+</head>
+<body>
+    {% if group %}
+        <h1>{{ group.name }}</h1>
+        <p>Members:</p>
+        <ul>
+            {% for member in group.members %}
+                <li>{{ member.name }}</li>
+            {% endfor %}
+        </ul>
+        <p>Balance:</p>
+        <ul>
+            {% for user_balance in group.user_balances %}
+                <li>{{ user_balance.user_name }} - {{ user_balance.balance }}</li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>Group not found</p>
+    {% endif %}
+</body>
+</html>

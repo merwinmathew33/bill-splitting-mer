@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Groups</title>
+</head>
+<body>
+    <h1>Groups</h1>
+    {% if groups %}
+        <ul>
+        {% for group in groups %}
+            <li>{{ group.name }}</li>
+        {% endfor %}
+        </ul>
+    {% else %}
+        <p>No groups found.</p>
+    {% endif %}
+</body>
+</html>

@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Bills</title>
+</head>
+<body>
+    <h1>Bills</h1>
+    {% if bills %}
+        <table>
+            <tr>
+                <th>Description</th>
+                <th>Amount</th>
+                <th>Date</th>
+            </tr>
+            {% for bill in bills %}
+            <tr>
+                <td>{{ bill.description }}</td>
+                <td>{{ bill.amount }}</td>
+                <td>{{ bill.date }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    {% else %}
+        <p>No bills found.</p>
+    {% endif %}
+</body>
+</html>

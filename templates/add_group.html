@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Add Group</title>
+</head>
+<body>
+    <h1>Add Group</h1>
+    <form method="post" action="/add_group">
+        <label for="name">Name:</label>
+        <input type="text" name="name"><br>
+        <label for="users">Users:</label>
+        <select multiple name="users">
+            {% for user in users %}
+                <option value="{{ user.id }}">{{ user.username }}</option>
+            {% endfor %}
+        </select><br>
+        <input type="submit" value="Add Group">
+    </form>
+</body>
+</html>
+
+
+
+
+
