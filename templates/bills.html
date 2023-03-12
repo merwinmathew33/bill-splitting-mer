@@ -5,6 +5,7 @@
 </head>
 <body>
     <h1>Bills</h1>
+    
     {% if bills %}
         <table>
             <tr>
@@ -23,5 +24,6 @@
     {% else %}
         <p>No bills found.</p>
     {% endif %}
+    <a href="/new_bill"><button>Add bill</button></a>
 </body>
 </html>

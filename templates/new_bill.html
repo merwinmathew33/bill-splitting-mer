@@ -6,7 +6,7 @@
 </head>
 <body>
     <h1>New Bill</h1>
-    <form method="post" action="/bills/new">
+    <form method="post" action="/bills">
         <label for="amount">Amount:</label>
         <input type="text" name="amount"><br>
         <label for="split_type">Split Type:</label>
@@ -17,9 +17,9 @@
         <label for="split_value">Split Value:</label>
         <input type="text" name="split_value"><br>
         <label for="user_id">User ID:</label>
-        <select name="user_id">
+        <select multiple name="users">
             {% for user in users %}
-            <option value="{{ user.id }}">{{ user.username }}</option>
+                <option value="{{ user.username }}">{{ user.username }}</option>
             {% endfor %}
         </select><br>
         <label for="group_id">Group ID:</label>

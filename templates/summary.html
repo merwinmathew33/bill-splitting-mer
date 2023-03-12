@@ -1,28 +1,15 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <link rel ="stylesheet"type="text/css"href="{{url_for('static',filename='styles.css')}}">
-    <title>Summary</title>
+    <title>Summary Page</title>
 </head>
 <body>
-    <h1>Summary</h1>
-    <h2>Balance</h2>
+    <h1>Summary for {{ user.username }}</h1>
+    <p>Hi {{ user.username }}, you owe a total of {{ owed_amount }} to other users:</p>
     <ul>
-        {% for user, balance in balances.items() %}
-            <li>{{ user }} owes {{ balance }}</li>
+        {% for creditor, amount in owed_amount.items() %}
+        <li>{{ creditor }}: {{ amount }}</li>
         {% endfor %}
     </ul>
-    <h2>Debt Simplification</h2>
-    <form method="post" action="/simplify-debt">
-        <input type="submit" value="Simplify Debt">
-    </form>
-    {% if simplified %}
-        <h3>Simplified Debt</h3>
-        <ul>
-            {% for user, debt in simplified.items() %}
-                <li>{{ user }} owes {{ debt }}</li>
-            {% endfor %}
-        </ul>
-    {% endif %}
 </body>
 </html>

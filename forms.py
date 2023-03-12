@@ -113,3 +113,92 @@ if __name__ == '__main__':
 
 
 
+from flask import Flask, render_template, request
+from flask_sqlalchemy import SQLAlchemy
+
+app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
+db = SQLAlchemy(app)
+
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), nullable=False)
+
+class Split(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    split_with = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+
+def calculate_owed_amount(user_id):
+    users = User.query.all()
+    split_list = Split.query.filter_by(user_id=user_id).all()
+    owed_amount = {}
+    for user in users:
+        owed_amount[user.id] = 0
+    for split in split_list:
+        owed_amount[split.split_with] += split.amount
+        owed_amount[user_id] -= split.amount
+    return owed_amount
+
+def simplify_debt(owed_amount):
+    simplified_debt = {}
+    for user_id in owed_amount.keys():
+        simplified_debt[user_id] = 0
+    for user_id in owed_amount.keys():
+        for other_id in owed_amount.keys():
+            if user_id != other_id and owed_amount[user_id] > 0 and owed_amount[other_id] < 0:
+                if abs(owed_amount[other_id]) > owed_amount[user_id]:
+                    simplified_debt[other_id] += owed_amount[user_id]
+                    owed_amount[other_id] += owed_amount[user_id]
+                    owed_amount[user_id] = 0
+                else:
+                    simplified_debt[other_id] += abs(owed_amount[other_id])
+                    owed_amount[user_id] += owed_amount[other_id]
+                    owed_amount[other_id] = 0
+    return simplified_debt
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/summary')
+def summary():
+    user_id = request.args.get('user_id')
+    owed_amount = calculate_owed_amount(user_id)
+    return render_template('summary.html', user_id=user_id, owed_amount=owed_amount)
+
+@app.route('/simplified-debt')
+def simplified_debt():
+    user_id = request.args.get('user_id')
+    owed_amount = calculate_owed_amount(user_id)
+    simplified_debt = simplify_debt(owed_amount)
+    return render_template('simplified-debt.html', user_id=user_id, simplified_debt=simplified_debt)
+
+if __name__ == '__main__':
+    app.run(debug=True)
+
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Bill Splitting App</title>
+</head>
+<body>
+    {% if username %}
+        <h1>Welcome, {{ username }}!</h1>
+        <a href="/logout"><button>Logout</button></a><br>
+        <a href="/add_group"><button>Add group</button></a><br>
+        <a href="/bills"><button>Bills</button></a>
+    {% else %}
+        <h1>Please login to continue</h1>
+        <form method="post" action="/login">
+            <label for="username">Username:</label>
+            <input type="text" name="username"><br>
+            <label for="password">Password:</label>
+            <input type="password" name="password"><br>
+            <input type="submit" value="Login">
+        </form>
+    {% endif %}
+</body>
+</html>

@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Simplified Debt</title>
+  </head>
+  <body>
+    <h1>Simplified Debt for {{ user.username }}</h1>
+    <p>Here is a summary of the debt for {{ user.username }}:</p>
+    <table>
+      <thead>
+        <tr>
+          <th>Peer</th>
+          <th>Amount Owed</th>
+          <th>Net Payable</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for peer, owed, net_payable in simplified_debt %}
+        <tr>
+          <td>{{ peer }}</td>
+          <td>{{ owed }}</td>
+          <td>{{ net_payable }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </body>
+</html>

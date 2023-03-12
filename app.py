@@ -37,6 +37,31 @@ class User:
             return User(user['username'], user['password'])
         else:
             return None
+    
+    def calculate_owed_amount(self):
+        split_list = mongo.db.split.find({'user_id': self.username})
+        owed_amount = {}
+        for split in split_list:
+            owed_amount[split['split_with']] = owed_amount.get(split['split_with'], 0) + split['amount']
+            owed_amount[self.username] = owed_amount.get(self.username, 0) - split['amount']
+        return owed_amount
+
+    def simplify_debt(self, owed_amount):
+        simplified_debt = {}
+        for user_id in owed_amount.keys():
+            simplified_debt[user_id] = 0
+        for user_id in owed_amount.keys():
+            for other_id in owed_amount.keys():
+                if user_id != other_id and owed_amount[user_id] > 0 and owed_amount[other_id] < 0:
+                    if abs(owed_amount[other_id]) > owed_amount[user_id]:
+                        simplified_debt[other_id] += owed_amount[user_id]
+                        owed_amount[other_id] += owed_amount[user_id]
+                        owed_amount[user_id] = 0
+                    else:
+                        simplified_debt[other_id] += abs(owed_amount[other_id])
+                        owed_amount[user_id] += owed_amount[other_id]
+                        owed_amount[other_id] = 0
+        return simplified_debt
 
 
 class Bill:
@@ -172,26 +197,39 @@ def group_detail(id):
     else:
         return "Group not found"
 
-@app.route("/bills")
+@app.route("/bills", methods=["GET", "POST"])
 def bills():
-    bills = Bill.get_all()
-    return render_template("bills.html", bills=bills)
-
-@app.route("/new_bill", methods=["GET", "POST"])
-def new_bill():
     if request.method == "POST":
-        amount = request.form["amount"]
-        split_type = request.form["split_type"]
-        split_value = request.form["split_value"]
-        user_id = request.form["user_id"]
-        group_id = request.form["group_id"]
-        bill = Bill(amount, split_type, split_value, user_id, group_id)
-        bill.save()
+        # get the selected user IDs from the multiple select field
+        selected_users = request.form.getlist("users")
+
+        # create a new bill with the selected user IDs
+        new_bill = Bill(
+            amount=request.form["amount"],
+            split_type=request.form["split_type"],
+            split_value=request.form["split_value"],
+            user_id=selected_users,
+            group_id=request.form["group_id"]
+        )
+
+        # save the new bill to the database
+        new_bill.save()
+
+        # redirect to the bills page
         return redirect("/bills")
     else:
-        users = mongo.db.users.find()
-        groups = mongo.db.groups.find()
-        return render_template("new_bill.html", users=users, groups=groups)
+        bills = Bill.get_all()
+        users = User.get_all()
+        groups = Group.get_all()
+        return render_template("bills.html", bills=bills, users=users, groups=groups)
+
+
+@app.route("/new_bill")
+def new_bill():
+    users = User.get_all()
+    groups = Group.get_all()
+    return render_template("new_bill.html", users=users, groups=groups)
+
 
 @app.route("/bills/<id>/edit", methods=["GET", "POST"])
 def edit_bill(id):
@@ -217,6 +255,21 @@ def delete_bill(id):
     return redirect("/bills")
 
 
+
+@app.route('/summary')
+def summary():
+    username = request.args.get('username')
+    user = User.get_by_username(username)
+    owed_amount = user.calculate_owed_amount()
+    return render_template('summary.html', user=user, owed_amount=owed_amount)
+
+@app.route('/simplified-debt')
+def simplified_debt():
+    username = request.args.get('username')
+    user = User.get_by_username(username)
+    owed_amount = user.calculate_owed_amount()
+    simplified_debt = user.simplify_debt(owed_amount)
+    return render_template('simplified-debt.html', user=user, simplified_debt=simplified_debt)
 
 
 
