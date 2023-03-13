@@ -202,3 +202,37 @@ if __name__ == '__main__':
     {% endif %}
 </body>
 </html>
+
+    
+@app.route('/summary')
+def summary():
+    username = ""
+    if 'username' in session:
+        if session.get('username'):
+            user = User.get_by_username(session['username'])
+            if user:
+                owed_amount = user.calculate_owed_amount()
+                return render_template('summary.html', user=user, owed_amount=owed_amount)
+            else:
+                return redirect("/login")
+        else:
+            return redirect("/login")
+@app.route('/summary')
+def summary():
+    user_id = session.get('user_id')
+    if user_id:
+        user = User.query.get(user_id)
+        owed_amount = calculate_owed_amount(user_id)
+        return render_template('summary.html', user=user, owed_amount=owed_amount)
+    else:
+        # handle case where user is not logged in
+        return redirect(url_for('login'))
+
+@app.route('/summary')
+def summary():
+    if 'username' in session:
+
+        username = request.args.get('username')
+        user = User.get_by_username(username)
+        owed_amount = user.calculate_owed_amount()
+        return render_template('summary.html', user=user, owed_amount=owed_amount)

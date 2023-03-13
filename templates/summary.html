@@ -5,11 +5,12 @@
 </head>
 <body>
     <h1>Summary for {{ user.username }}</h1>
-    <p>Hi {{ user.username }}, you owe a total of {{ owed_amount }} to other users:</p>
+    <p>Hi {{ user.username }}, you owe a total of ${{ owed_amount }} to other users:</p>
     <ul>
         {% for creditor, amount in owed_amount.items() %}
         <li>{{ creditor }}: {{ amount }}</li>
         {% endfor %}
     </ul>
+    <a href="/simplified-debt"><button>simplifird debt</button></a>  
 </body>
 </html>

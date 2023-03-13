@@ -22,7 +22,15 @@ class User:
             'password': hashed_password
         }
         mongo.db.users.insert_one(user)
-
+ 
+    def calculate_owed_amount(self):
+        split_list = mongo.db.split.find({'user_id': self.username})
+        owed_amount = {}
+        for split in split_list:
+            owed_amount[split['split_with']] = owed_amount.get(split['split_with'], 0) + split['amount']
+            owed_amount[self.username] = owed_amount.get(self.username, 0) - split['amount']
+        return owed_amount
+ 
     @staticmethod
     def get_all():
         users = []
@@ -38,13 +46,7 @@ class User:
         else:
             return None
     
-    def calculate_owed_amount(self):
-        split_list = mongo.db.split.find({'user_id': self.username})
-        owed_amount = {}
-        for split in split_list:
-            owed_amount[split['split_with']] = owed_amount.get(split['split_with'], 0) + split['amount']
-            owed_amount[self.username] = owed_amount.get(self.username, 0) - split['amount']
-        return owed_amount
+    
 
     def simplify_debt(self, owed_amount):
         simplified_debt = {}
@@ -255,13 +257,15 @@ def delete_bill(id):
     return redirect("/bills")
 
 
-
 @app.route('/summary')
 def summary():
-    username = request.args.get('username')
-    user = User.get_by_username(username)
+    username = ""
+   
+    user = User.get_by_username(session['username'])
+            
     owed_amount = user.calculate_owed_amount()
     return render_template('summary.html', user=user, owed_amount=owed_amount)
+           
 
 @app.route('/simplified-debt')
 def simplified_debt():
