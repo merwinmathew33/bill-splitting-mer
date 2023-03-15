@@ -236,3 +236,50 @@ def summary():
         user = User.get_by_username(username)
         owed_amount = user.calculate_owed_amount()
         return render_template('summary.html', user=user, owed_amount=owed_amount)
+
+
+
+@staticmethod
+    def get_all():
+        bills = []
+        for bill in mongo.db.bills.find():
+            user = mongo.db.users.find_one({'_id': bill['user_id']},{'user_name': 1})
+            group = mongo.db.groups.find_one({'_id': bill['group_id']},{'group_name': 1})
+            if user and group:
+                bill['user_name'] = user.get('user_name')
+                bill['group_name'] = group.get('group_name')
+                bills.append(bill)
+        return bills
+
+
+@app.route("/bill/add", methods=["GET", "POST"])
+def add_bill():
+    if request.method == "POST":
+        amount = request.form["amount"]
+        split_type = request.form["split_type"]
+        split_value = request.form["split_value"]
+        user_name = request.form["user_name"]
+        group_name = request.form["group_name"]
+        
+        # retrieve user and group objects based on names
+        user = mongo.db.users.find_one({'username': user_name})
+        group = mongo.db.groups.find_one({'name': group_name})
+        
+        # create Bill object using user and group IDs
+        if user and group:
+            bill = Bill(amount, split_type, split_value, user['_id'], group['_id'])
+            bill.save()
+            return redirect("/bills")
+        else:
+            flash("User or group not found.")
+            return render_template("add_bill.html")
+    else:
+        return render_template("add_bill.html")
+
+# set user_id and group_id attributes based on IDs retrieved from the database
+        if user and group:
+            self.user_id = user['_id']
+            self.group_id = group['_id']
+        else:
+            self.user_id = None
+            self.group_id = None

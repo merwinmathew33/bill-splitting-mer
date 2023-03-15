@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Add Bill</title>
+</head>
+<body>
+	<h1>Add Bill</h1>
+	{% with messages = get_flashed_messages() %}
+		{% if messages %}
+			<ul>
+			{% for message in messages %}
+				<li>{{ message }}</li>
+			{% endfor %}
+			</ul>
+		{% endif %}
+	{% endwith %}
+	<form action="" method="post">
+		<label for="amount">Amount:</label>
+		<input type="text" name="amount" required><br><br>
+		<label for="split_type">Split Type:</label>
+		<input type="text" name="split_type" required><br><br>
+		<label for="split_value">Split Value:</label>
+		<input type="text" name="split_value" required><br><br>
+		<label for="user_name">User Name:</label>
+		<input type="text" name="user_name" required><br><br>
+		<label for="group_name">Group Name:</label>
+		<input type="text" name="group_name" required><br><br>
+		<button type="submit">Add Bill</button>
+	</form>
+</body>
+</html>

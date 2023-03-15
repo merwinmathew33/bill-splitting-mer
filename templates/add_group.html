@@ -1,26 +1,28 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Add Group</title>
+	<title>Add Group</title>
 </head>
 <body>
-    <link rel ="stylesheet"type="text/css"href="{{url_for('static',filename='styles.css')}}">
-    <h1>Add Group</h1>
-    <form method="post" action="/add_group">
-        <label for="name">Name:</label>
-        <input type="text" name="name"><br>
-        <label for="users">Users:</label>
-        <select multiple name="users">
-            {% for user in users %}
-                <option value="{{ user.id }}">{{ user.username }}</option>
-            {% endfor %}
-        </select><br>
-        <input type="submit" value="Add Group">
-    </form>
+	<h1>Add Group</h1>
+	{% with messages = get_flashed_messages() %}
+		{% if messages %}
+			<ul>
+			{% for message in messages %}
+				<li>{{ message }}</li>
+			{% endfor %}
+			</ul>
+		{% endif %}
+	{% endwith %}
+	<form action="" method="post">
+		<label for="name">Name:</label>
+		<input type="text" name="name" required><br><br>
+		<label for="users">Select users:</label><br>
+		{% for user in users %}
+			<input type="checkbox" name="users" value="{{ user['_id'] }}">{{ user['username'] }}<br>
+		{% endfor %}
+		<br>
+		<button type="submit">Add Group</button>
+	</form>
 </body>
 </html>
-
-
-
-
-

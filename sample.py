@@ -1,7 +1,4 @@
-from flask import Flask, render_template, url_for, redirect, request, session, flash
-from flask_pymongo import PyMongo
-from bson.objectid import ObjectId
-import bcrypt
+
 
 app = Flask(__name__)
 app.config["MONGO_URI"] = "mongodb://localhost:27017/myDatabase"
@@ -10,8 +7,6 @@ mongo = PyMongo(app)
 
 # Define models for the database collections
 class User:
-    query = mongo.db.users
-
     def __init__(self, username, password):
         self.username = username
         self.password = password
@@ -25,7 +20,13 @@ class User:
         }
         mongo.db.users.insert_one(user)
  
-    
+    def calculate_owed_amount(self):
+        split_list = mongo.db.split.find({'user_id': self.username})
+        owed_amount = {}
+        for split in split_list:
+            owed_amount[split['split_with']] = owed_amount.get(split['split_with'], 0) + split['amount']
+            owed_amount[self.username] = owed_amount.get(self.username, 0) - split['amount']
+        return owed_amount
  
     @staticmethod
     def get_all():
@@ -40,14 +41,9 @@ class User:
         if user:
             return User(user['username'], user['password'])
         else:
-            return user_user  
-    def calculate_owed_amount(self):
-        split_list = mongo.db.split.find({'user_id': self.username})
-        owed_amount = {}
-        for split in split_list:
-            owed_amount[split['split_with']] = owed_amount.get(split['split_with'], 0) + split['amount']
-            owed_amount[self.username] = owed_amount.get(self.username, 0) - split['amount']
-        return owed_amount
+            return None
+    
+    
 
     def simplify_debt(self, owed_amount):
         simplified_debt = {}
@@ -68,32 +64,22 @@ class User:
 
 
 class Bill:
-    def __init__(self, amount, split_type, split_value, user_name, group_name):
+    def __init__(self, amount, split_type, split_value, user_id, group_id):
         self.amount = amount
         self.split_type = split_type
         self.split_value = split_value
-        self.user_name = user_name
-        self.group_name = group_name
-        
-        # retrieve user and group objects based on names
-        user = mongo.db.users.find_one({'username': user_name})
-        group = mongo.db.groups.find_one({'name': group_name})
-        
-        
+        self.user_id = user_id
+        self.group_id = group_id
 
     def save(self):
-        
-            bill = {
-                'amount': self.amount,
-                'split_type': self.split_type,
-                'split_value': self.split_value,
-                
-                'user_name': self.user_name,
-                'group_name': self.group_name
-            }
-            mongo.db.bills.insert_one(bill)
-
-        
+        bill = {
+            'amount': self.amount,
+            'split_type': self.split_type,
+            'split_value': self.split_value,
+            'user_id': self.user_id,
+            'group_id': self.group_id
+        }
+        mongo.db.bills.insert_one(bill)
 
     @staticmethod
     def get_all():
@@ -110,7 +96,6 @@ class Bill:
 
     def delete(self):
         mongo.db.bills.delete_one({'_id': ObjectId(self.id)})
-
 
 class Group:
     def __init__(self, name, users):
@@ -165,8 +150,8 @@ def login():
 
 @app.route("/logout")
 def logout():
-    session.pop('username', user_id)
-    return redirect("/luser")
+    session.pop('username', None)
+    return redirect("/login")
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
@@ -186,107 +171,87 @@ def register():
         return redirect("/")
     else:
         return render_template("register.html")
-@app.route("/bills")
+@app.route("/add_group", methods=["GET", "POST"])
+def add_group():
+    if request.method == "POST":
+        name = request.form["name"]
+        users = request.form.getlist("users")
+        group = Group(name, users)
+        group.save()
+        return redirect("/")
+    else:
+        users = User.get_all()
+        return render_template("add_group.html", users=users)
+
+@app.route("/groups")
+def groups():
+    groups = Group.get_all()
+    return render_template("groups.html", groups=groups)
+
+@app.route("/groups/<id>")
+def group_detail(id):
+    group = Group.get_by_id(id)
+    if group:
+        return render_template("group_detail.html", group=group)
+    else:
+        return "Group not found"
+
+@app.route("/bills", methods=["GET", "POST"])
 def bills():
-    if 'username' in session:
+    if request.method == "POST":
+        # get the selected user IDs from the multiple select field
+        selected_users = request.form.getlist("users")
+
+        # create a new bill with the selected user IDs
+        new_bill = Bill(
+            amount=request.form["amount"],
+            split_type=request.form["split_type"],
+            split_value=request.form["split_value"],
+            user_id=selected_users,
+            group_id=request.form["group_id"]
+        )
+
+        # save the new bill to the database
+        new_bill.save()
+
+        # redirect to the bills page
+        return redirect("/bills")
+    else:
         bills = Bill.get_all()
-        return render_template("bills.html", bills=bills)
-    else:
-        return redirect("/login")
-
-@app.route("/bill/add", methods=["GET", "POST"])
-def add_bill():
-    if request.method == "POST":
-        amount = request.form["amount"]
-        split_type = request.form["split_type"]
-        split_value = request.form["split_value"]
-        user_name = request.form["user_name"]
-        group_name = request.form["group_name"]
-        
-        # retrieve user and group objects based on names
-        user = mongo.db.users.find_one({'username': user_name})
-        group = mongo.db.groups.find_one({'name': group_name})
-        
-        # create Bill object using user and group IDs
-        if user and group:
-            bill = Bill(amount, split_type, split_value, user_name, group_name)
-            bill.save()
-            return redirect("/bills")
-        else:
-            flash("User or group not found.")
-            return render_template("add_bill.html")
-    else:
-        return render_template("add_bill.html")
+        users = User.get_all()
+        groups = Group.get_all()
+        return render_template("bills.html", bills=bills, users=users, groups=groups)
 
 
+@app.route("/new_bill")
+def new_bill():
+    users = User.get_all()
+    groups = Group.get_all()
+    return render_template("new_bill.html", users=users, groups=groups)
 
 
-@app.route("/bill/edit/<id>", methods=["GET", "POST"])
+@app.route("/bills/<id>/edit", methods=["GET", "POST"])
 def edit_bill(id):
+    bill = Bill.get_by_id(id)
     if request.method == "POST":
         amount = request.form["amount"]
         split_type = request.form["split_type"]
         split_value = request.form["split_value"]
-        bill = Bill.get_by_id(id)
         bill.amount = amount
         bill.split_type = split_type
         bill.split_value = split_value
         bill.update()
         return redirect("/bills")
     else:
-        bill = Bill.get_by_id(id)
-        return render_template("edit_bill.html", bill=bill)
+        users = mongo.db.users.find()
+        groups = mongo.db.groups.find()
+        return render_template("edit_bill.html", bill=bill, users=users, groups=groups)
 
-@app.route("/bill/delete/<id>", methods=["POST"])
+@app.route("/bills/<id>/delete", methods=["POST"])
 def delete_bill(id):
     bill = Bill.get_by_id(id)
     bill.delete()
     return redirect("/bills")
-
-
-@app.route("/groups")
-def groups():
-    if 'username' in session:
-        groups = Group.get_all()
-        return render_template("groups.html", groups=groups)
-    else:
-        return redirect("/login")
-
-@app.route("/add_group", methods=["GET", "POST"])
-def add_group():
-    if request.method == "POST":
-        name = request.form["name"]
-        user_ids = request.form.getlist("users")
-        user_objs = [mongo.db.users.find_one({'_id': ObjectId(user_id)}) for user_id in user_ids]
-        group = Group(name, user_objs)
-        group.save()
-        return redirect("/groups")
-    else:
-        users = mongo.db.users.find()
-        return render_template("add_group.html", users=users)
-
-
-
-@app.route("/group/edit/<id>", methods=["GET", "POST"])
-def edit_group(id):
-    if request.method == "POST":
-        name = request.form["name"]
-        users = request.form.getlist("users")
-        group = Group.get_by_id(id)
-        group.name = name
-        group.users = users
-        group.update()
-        return redirect("/groups")
-    else:
-        group = Group.get_by_id(id)
-        return render_template("edit_group.html", group=group)
-
-@app.route("/group/delete/<id>")
-def delete_group(id):
-    group = Group.get_by_id(id)
-    group.delete()
-    return redirect("/groups")
-
 
 
 @app.route('/summary')
