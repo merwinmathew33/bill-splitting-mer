@@ -79,6 +79,8 @@ class Bill:
         user = mongo.db.users.find_one({'username': user_name})
         group = mongo.db.groups.find_one({'name': group_name})
         
+        self.user_id = user['_id']
+        self.group_id = group['_id']
         
 
     def save(self):
@@ -103,13 +105,15 @@ class Bill:
     @staticmethod
     def get_by_id(id):
         bill = mongo.db.bills.find_one({'_id': ObjectId(id)})
+
         return bill
 
     def update(self):
         mongo.db.bills.update_one({'_id': ObjectId(self.id)}, {"$set": {'amount': self.amount, 'split_type': self.split_type, 'split_value': self.split_value}})
-
-    def delete(self):
-        mongo.db.bills.delete_one({'_id': ObjectId(self.id)})
+    
+    @staticmethod
+    def delete(id):
+        mongo.db.bills.delete_one({'_id': ObjectId(id)})
 
 
 class Group:
@@ -239,9 +243,9 @@ def edit_bill(id):
 
 @app.route("/bill/delete/<id>", methods=["POST"])
 def delete_bill(id):
-    bill = Bill.get_by_id(id)
-    bill.delete()
+    Bill.delete(id)
     return redirect("/bills")
+
 
 
 @app.route("/groups")

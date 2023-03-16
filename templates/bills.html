@@ -26,7 +26,7 @@
 						<td>{{ bill.user_name }}</td>
 						<td>{{ bill.group_name }}</td>
 						<td>
-							<form action="/bill/delete/{{ bill.id }}" method="post">
+							<form action="/bill/delete/{{ bill._id }}" method="POST">
 								<button type="submit">Delete</button>
 							</form>
 						</td>
