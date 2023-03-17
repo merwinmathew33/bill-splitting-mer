@@ -1,30 +1,22 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <link rel ="stylesheet"type="text/css"href="{{url_for('static',filename='styles.css')}}">
-    <title>Update Bill</title>
+    <link rel="stylesheet" type="text/css" href="{{url_for('static', filename='styles.css')}}">
+    <title>Edit Bill</title>
 </head>
 <body>
-    <h1>Update Bill</h1>
-    {% if message %}
-        <p>{{ message }}</p>
-    {% endif %}
-    <form method="post" action="/update-bill/{{ bill.id }}">
-        <label for="description">Description:</label>
-        <input type="text" name="description" value="{{ bill.description }}"><br>
+    <h1>Edit Bill</h1>
+    <form method="post" action="">
         <label for="amount">Amount:</label>
-        <input type="number" name="amount" step="0.01" value="{{ bill.amount }}"><br>
+        <input type="text" name="amount" value="{{ bill.amount }}" required><br><br>
         <label for="split_type">Split Type:</label>
-        <select name="split_type">
-            <option value="percentage" {% if bill.split_type == 'percentage' %}selected{% endif %}>Percentage</option>
-            <option value="specific_amount" {% if bill.split_type == 'specific_amount' %}selected{% endif %}>Specific Amount</option>
-        </select><br>
-        <label for="users">Users:</label>
-        <select multiple name="users">
-            {% for user in users %}
-                <option value="{{ user.username }}" {% if user in bill.users %}selected{% endif %}>{{ user.username }}</option>
-            {% endfor %}
-        </select><br>
+        <input type="text" name="split_type" value="{{ bill.split_type }}" required><br><br>
+        <label for="split_value">Split Value:</label>
+        <input type="text" name="split_value" value="{{ bill.split_value }}" required><br><br>
+        <label for="user_name">User Name:</label>
+        <input type="text" name="user_name" value="{{ bill.user_name }}" required><br><br>
+        <label for="group_name">Group Name:</label>
+        <input type="text" name="group_name" value="{{ bill.group_name }}" required><br><br>
         <input type="submit" value="Update Bill">
     </form>
 </body>

@@ -108,8 +108,9 @@ class Bill:
 
         return bill
 
-    def update(self):
-        mongo.db.bills.update_one({'_id': ObjectId(self.id)}, {"$set": {'amount': self.amount, 'split_type': self.split_type, 'split_value': self.split_value}})
+    @staticmethod
+    def update(id, amount, split_type, split_value):
+        mongo.db.bills.update_one({'_id': ObjectId(id)}, {"$set": {'amount': amount, 'split_type': split_type, 'split_value': split_value}})
     
     @staticmethod
     def delete(id):
@@ -227,19 +228,20 @@ def add_bill():
 
 @app.route("/bill/edit/<id>", methods=["GET", "POST"])
 def edit_bill(id):
+    
     if request.method == "POST":
-        amount = request.form["amount"]
-        split_type = request.form["split_type"]
-        split_value = request.form["split_value"]
-        bill = Bill.get_by_id(id)
-        bill.amount = amount
-        bill.split_type = split_type
-        bill.split_value = split_value
-        bill.update()
+        amount = request.form.get("amount")
+        split_type = request.form.get("split_type")
+        split_value = request.form.get("split_value")
+        user_name = request.form.get("user_name")
+        group_name = request.form.get("group_name")
+        
+        Bill.update(id, amount, split_type, split_value)
         return redirect("/bills")
     else:
         bill = Bill.get_by_id(id)
         return render_template("edit_bill.html", bill=bill)
+
 
 @app.route("/bill/delete/<id>", methods=["POST"])
 def delete_bill(id):

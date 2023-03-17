@@ -1,43 +1,38 @@
-<!DOCTYPE html>
-<html>
-<head>
-	<title>Bills</title>
-</head>
-<body>
-	{% if bills %}
-		<h1>Bills</h1>
-		<table>
-			<thead>
-				<tr>
-					<th>Amount</th>
-					<th>Split Type</th>
-					<th>Split Value</th>
-					<th>User names</th>
-					<th>Group name</th>
-					<th>Action</th>
-				</tr>
-			</thead>
-			<tbody>
-				{% for bill in bills %}
-					<tr>
-						<td>{{ bill.amount }}</td>
-						<td>{{ bill.split_type }}</td>
-						<td>{{ bill.split_value }}</td>
-						<td>{{ bill.user_name }}</td>
-						<td>{{ bill.group_name }}</td>
-						<td>
-							<form action="/bill/delete/{{ bill._id }}" method="POST">
-								<button type="submit">Delete</button>
-							</form>
-						</td>
-					</tr>
-				{% endfor %}
-			</tbody>
-		</table>
-	{% else %}
-		<p>No bills found.</p>
-	{% endif %}
-	<br>
-	<a href="/bill/add"><button type="button">Add Bill</button></a>
-</body>
-</html>
+{% if bills %}
+<h1>Bills</h1>
+<table>
+    <thead>
+        <tr>
+            <th>Amount</th>
+            <th>Split Type</th>
+            <th>Split Value</th>
+            <th>User names</th>
+            <th>Group name</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for bill in bills %}
+        <tr>
+            <td>{{ bill.amount }}</td>
+            <td>{{ bill.split_type }}</td>
+            <td>{{ bill.split_value }}</td>
+            <td>{{ bill.user_name }}</td>
+            <td>{{ bill.group_name }}</td>
+            <td>
+                <form action="/bill/delete/{{ bill._id }}" method="POST">
+                    <button type="submit">Delete</button>
+                </form>
+            </td>
+            <td>
+                <a href="/bill/edit/{{bill._id}}"><button type="button">Edit</button></a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>No bills found.</p>
+{% endif %}
+<br>
+<a href="/bill/add"><button type="button">Add Bill</button></a>

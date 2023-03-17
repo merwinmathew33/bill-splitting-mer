@@ -283,3 +283,42 @@ def add_bill():
         else:
             self.user_id = None
             self.group_id = None
+
+
+@app.route("/bill/edit/<id>", methods=["GET", "POST"])
+def edit_bill(id):
+    if request.method == "POST":
+        amount = request.form.get("amount")
+        split_type = request.form.get("split_type")
+        split_value = request.form.get("split_value")
+        bill = Bill.get_by_id(id)
+        if bill is None:
+            # handle the case when the bill with the given id is not found
+            flash("Bill not found.")
+            return redirect("/bills")
+        if amount is None:
+            # handle the case when the "amount" field is not present in the form
+            flash("Please enter an amount.")
+            return redirect(request.url)
+        bill.amount = amount
+        bill.split_type = split_type
+        bill.split_value = split_value
+        bill.update()
+        return redirect("/bills")
+    else:
+        bill = Bill.get_by_id(id)
+        if bill is None:
+            # handle the case when the bill with the given id is not found
+            flash("Bill not found.")
+            return redirect("/bills")
+        return render_template("edit_bill.html", bill=bill)
+"/update-bill/{{ bill.id }}">
+
+<form action="/bill/edit/{{bill._id}}" method="POST">
+    <input type="text" name="amount" value="{{ bill.amount }}">
+    <input type="text" name="split_type" value="{{ bill.split_type }}">
+    <input type="text" name="split_value" value="{{ bill.split_value }}">
+    <input type="text" name="user_name" value="{{ bill.user_name }}">
+    <input type="text" name="group_name" value="{{ bill.group_name }}">
+    <button type="submit">Save Changes</button>
+</form>
