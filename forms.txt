@@ -391,3 +391,117 @@ def edit_bill(id):
     <a href="/group/add"><button type="button">Add New Group</button></a>
 </body>
 </html>
+
+def calculate_owed_amount(self):
+        split_list = mongo.db.split.find({'user_id': self.username})
+        owed_amount = {}
+        for split in split_list:
+            owed_amount[split['split_with']] = owed_amount.get(split['split_with'], 0) + split['amount']
+            owed_amount[self.username] = owed_amount.get(self.username, 0) - split['amount']
+        return owed_amount
+
+    def simplify_debt(self, owed_amount):
+        simplified_debt = {}
+        for user_id in owed_amount.keys():
+            simplified_debt[user_id] = 0
+        for user_id in owed_amount.keys():
+            for other_id in owed_amount.keys():
+                if user_id != other_id and owed_amount[user_id] > 0 and owed_amount[other_id] < 0:
+                    if abs(owed_amount[other_id]) > owed_amount[user_id]:
+                        simplified_debt[other_id] += owed_amount[user_id]
+                        owed_amount[other_id] += owed_amount[user_id]
+                        owed_amount[user_id] = 0
+                    else:
+                        simplified_debt[other_id] += abs(owed_amount[other_id])
+                        owed_amount[user_id] += owed_amount[other_id]
+                        owed_amount[other_id] = 0
+        return simplified_debt
+@app.route('/summary')
+def summary():
+    username = ""
+   
+    user = User.get_by_username(session['username'])
+            
+    owed_amount = user.calculate_owed_amount()
+    return render_template('summary.html', user=user, owed_amount=owed_amount)
+ <!DOCTYPE html>
+<html>
+<head>
+    <title>Summary Page</title>
+</head>
+<body>
+    <h1>Summary for {{ user.username }}</h1>
+    <p>Hi {{ user.username }}, you owe a total of ${{ owed_amount }} to other users:</p>
+    <ul>
+        {% for creditor, amount in owed_amount.items() %}
+        <li>{{ creditor }}: {{ amount }}</li>
+        {% endfor %}
+    </ul>
+    <a href="/simplified-debt"><button>simplifird debt</button></a>  
+</body>
+</html>
+  @app.route("/summary", methods=["GET", "POST"])
+def summary():
+    if 'username' in session:
+        user_id = mongo.db.users.find_one({'username': session['username']})['_id']
+        bills = Bill.get_all()
+        debts = {}
+        peers = []
+        for bill in bills:
+            if bill['user_id'] == str(user_id):
+                # user paid the bill
+                if bill['split_type'] == 'percentage':
+                    for user in bill['split_value']:
+                        if user != str(user_id):
+                            amount = (bill['amount'] * bill['split_value'][user]) / 100
+                            if user in debts:
+                                debts[user] += amount
+                            else:
+                                debts[user] = amount
+                else:
+                    for user in bill['split_value']:
+                        if user != str(user_id):
+                            amount = bill['split_value'][user]
+                            if user in debts:
+                                debts[user] += amount
+                            else:
+                                debts[user] = amount
+            else:
+                # user owes money for the bill
+                if str(user_id) in bill['split_value']:
+                    if bill['split_type'] == 'percentage':
+                        amount = (bill['amount'] * bill['split_value'][str(user_id)]) / 100
+                        if str(bill['user_id']) in debts:
+                            debts[str(bill['user_id'])] += amount
+                        else:  
+                            debts[str(bill['user_id'])] = amount  
+        return render_template("summary.html", debts=debts, peers=peers)                    
+    else:
+        flash("You need to be logged in to view this page", "danger")
+        return redirect(url_for("login"))        
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Summary</title>
+</head>
+<body>
+    <h1>Summary</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>Peer</th>
+                <th>Amount owed</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for peer, amount in debts.items() %}
+                <tr>
+                    <td>{{ peer }}</td>
+                    <td>{{ amount }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

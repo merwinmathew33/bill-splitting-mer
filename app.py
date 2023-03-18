@@ -41,31 +41,7 @@ class User:
             return User(user['username'], user['password'])
         else:
             return user_user  
-    def calculate_owed_amount(self):
-        split_list = mongo.db.split.find({'user_id': self.username})
-        owed_amount = {}
-        for split in split_list:
-            owed_amount[split['split_with']] = owed_amount.get(split['split_with'], 0) + split['amount']
-            owed_amount[self.username] = owed_amount.get(self.username, 0) - split['amount']
-        return owed_amount
-
-    def simplify_debt(self, owed_amount):
-        simplified_debt = {}
-        for user_id in owed_amount.keys():
-            simplified_debt[user_id] = 0
-        for user_id in owed_amount.keys():
-            for other_id in owed_amount.keys():
-                if user_id != other_id and owed_amount[user_id] > 0 and owed_amount[other_id] < 0:
-                    if abs(owed_amount[other_id]) > owed_amount[user_id]:
-                        simplified_debt[other_id] += owed_amount[user_id]
-                        owed_amount[other_id] += owed_amount[user_id]
-                        owed_amount[user_id] = 0
-                    else:
-                        simplified_debt[other_id] += abs(owed_amount[other_id])
-                        owed_amount[user_id] += owed_amount[other_id]
-                        owed_amount[other_id] = 0
-        return simplified_debt
-
+    
 
 class Bill:
     def __init__(self, amount, split_type, split_value, user_name, group_name):
@@ -89,6 +65,8 @@ class Bill:
                 'amount': self.amount,
                 'split_type': self.split_type,
                 'split_value': self.split_value,
+                'user_id': self.user_id,
+                'group_id': self.group_id,
                 
                 'user_name': self.user_name,
                 'group_name': self.group_name
@@ -294,23 +272,83 @@ def delete_group(id):
 
 
 
-@app.route('/summary')
-def summary():
-    username = ""
-   
-    user = User.get_by_username(session['username'])
-            
-    owed_amount = user.calculate_owed_amount()
-    return render_template('summary.html', user=user, owed_amount=owed_amount)
-           
 
-@app.route('/simplified-debt')
-def simplified_debt():
-    username = request.args.get('username')
-    user = User.get_by_username(username)
-    owed_amount = user.calculate_owed_amount()
-    simplified_debt = user.simplify_debt(owed_amount)
-    return render_template('simplified-debt.html', user=user, simplified_debt=simplified_debt)
+
+@app.route("/summary", methods=["GET", "POST"])
+def summary():
+    if 'username' in session:
+        user_id = mongo.db.users.find_one({'username': session['username']})['_id']
+        bills = Bill.get_all()
+        debts = {}
+        am = {}
+        peers = []
+        for bill in bills:
+            if bill['user_id'] == user_id:
+                # user paid the bill
+                if bill['split_type'] == 'percentage':
+                    for user in bill['user_id']:
+                        if user != user_id:
+                            amount = (int(bill['amount']) * int(bill['split_value'])) / 100
+                            if user in debts:
+                                debts[user] += amount
+                            else:
+                                debts[user] = amount
+                            am.update({"Name":bill['user_name'], "Money":amount})
+                else:
+                    for user in bill['user_id']:
+                        if user != str(user_id):
+                            amount = bill['split_value']
+                            if user in debts:
+                                debts[user] += amount
+                            else:
+                                debts[user] = amount
+                            am.update({"Name":bill['user_name'], "Money":amount})
+            else:
+                # user owes money for the bill
+                
+                if bill['split_type'] == 'percentage':
+                    amount = (int(bill['amount']) * int(bill['split_value'])) / 100
+                    if bill['user_id'] in debts:
+                        debts[bill['user_id']] += amount
+                    else:  
+                        debts[(bill['user_id'])] = amount
+                    am.update({"Name":bill['user_name'], "Money":amount})  
+        return render_template("summary.html", am=am)                    
+    else:
+        flash("You need to be logged in to view this page", "danger")
+        return redirect(url_for("login"))
+
+
+@app.route("/simplified_bills", methods=["GET", "POST"])
+def simplified_bills():       
+    for bill in bills:
+        if bill['user_id'] == str(user_id):
+            for user in bill['split_value']:
+                if user != str(user_id) and user not in peers:
+                    peers.append(user)
+        elif str(user_id) in bill['split_value']:
+            if str(bill['user_id']) != str(user_id) and str(bill['user_id']) not in peers:
+                peers.append(str(bill['user_id']))
+        
+    for peer in peers:
+        if peer in debts and debts[peer] > 0 and str(peer) != str(user_id):
+            for peer2 in peers:
+                if peer != peer2 and peer2 in debts and debts[peer2] < 0 and debts[peer] != 0:
+                    if abs(debts[peer2]) > debts[peer]:
+                        debts[peer2] += debts[peer]
+                        print(f"You owe {peer2} ₹{abs(debts[peer])}")
+                        debts[peer] = 0
+                    else:
+                        debts[peer] += debts[peer2]
+                        print(f"You owe {peer2} ₹{abs(debts[peer2])}")
+                        debts[peer2] = 0
+
+    return render_template("settle_bills.html", debts=debts)
+    
+
+
+
+
 
 
 
