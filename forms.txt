@@ -322,3 +322,72 @@ def edit_bill(id):
     <input type="text" name="group_name" value="{{ bill.group_name }}">
     <button type="submit">Save Changes</button>
 </form>
+
+@app.route("/bill/edit/<id>", methods=["GET", "POST"])
+def edit_bill(id):
+    
+    if request.method == "POST":
+        amount = request.form.get("amount")
+        split_type = request.form.get("split_type")
+        split_value = request.form.get("split_value")
+        user_name = request.form.get("user_name")
+        group_name = request.form.get("group_name")
+        
+        Bill.update(id, amount, split_type, split_value)
+        return redirect("/bills")
+    else:
+        bill = Bill.get_by_id(id)
+        return render_template("edit_bill.html", bill=bill)
+   <h1>Groups</h1>
+    {% if groups %}
+        <ul>
+        {% for group in groups %}
+            <li>{{ group.name }}</li>
+        {% endfor %}
+        </ul>
+    {% else %}
+        <p>No groups found.</p>
+    {% endif %}     
+
+    <!DOCTYPE html>
+<html>
+<head>
+    <title>Groups</title>
+</head>
+<body>
+    <h1>Groups</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>Group name</th>
+                
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if groups %}
+            <tr>
+                <td>{% for group in groups %}
+                        {{ group.name }}>
+                    
+                </td>
+                
+                <td>
+                    <form action="/group/delete/{{group._id}}" method="POST">
+                        <button type="submit">Delete</button>
+                    </form>
+                    {% endfor %}
+                </td>
+                <td>
+                    <a href="/group/delete/{{group._id}}"><button type="button">Edit</button></a>
+                </td>
+            </tr>
+            {% else %}
+                <p>No groups found.</p>
+            {% endif %}
+        </tbody>
+    </table>
+    
+    <a href="/group/add"><button type="button">Add New Group</button></a>
+</body>
+</html>

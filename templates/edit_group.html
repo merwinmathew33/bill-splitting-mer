@@ -1,0 +1,20 @@
+{% block content %}
+  <h1>Edit Group</h1>
+  <form action="/group/edit/{{ group._id }}" method="POST">
+    <label for="name">Group Name:</label>
+    <input type="text" id="name" name="name" value="{{ group.name }}" required><br>
+    <label for="users">Group Members:</label><br>
+    
+    {% for user in users %}
+		<input type="checkbox" name="users" value="{{ user['_id'] }}">{{ user['username'] }}<br>
+	{% endfor %}
+	<br>
+
+
+
+  
+    </select>
+
+    <button type="submit">Update</button>
+  </form>
+{% endblock %}

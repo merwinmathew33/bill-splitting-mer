@@ -1,18 +1,15 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Groups</title>
-</head>
-<body>
-    <h1>Groups</h1>
-    {% if groups %}
-        <ul>
-        {% for group in groups %}
-            <li>{{ group.name }}</li>
-        {% endfor %}
-        </ul>
-    {% else %}
-        <p>No groups found.</p>
-    {% endif %}
-</body>
-</html>
+<h1>Groups</h1>
+{% if groups %}
+    <ul>
+    {% for group in groups %}
+        <li>{{ group.name }}</li>
+        <form action="/group/delete/{{group._id}}" method="POST">
+            <button type="submit" >Delete</button>
+        </form>
+        <a href="/group/edit/{{group._id}}"><button type="button">Edit</button></a>
+    {% endfor %}
+    </ul>
+{% else %}
+    <p>No groups found.</p>
+{% endif %}
+<a href="/group/add"><button>Add Group</button></a>  

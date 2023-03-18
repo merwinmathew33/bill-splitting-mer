@@ -138,13 +138,14 @@ class Group:
     def get_by_id(id):
         group = mongo.db.groups.find_one({'_id': ObjectId(id)})
         return group
-
-    def update(self):
-        mongo.db.groups.update_one({'_id': ObjectId(self.id)}, {"$set": {'name': self.name, 'users': self.users}})
-
-    def delete(self):
-        mongo.db.groups.delete_one({'_id': ObjectId(self.id)})
-
+    @staticmethod
+    def update(id,name,users):
+        mongo.db.groups.update_one({'_id': ObjectId(id)}, {"$set": {'name': name, 'users': users}})
+ 
+    @staticmethod
+    def delete(id):
+        mongo.db.groups.delete_one({'_id': ObjectId(id)})
+    
 
 # Define routes and views
 @app.route("/")
@@ -258,7 +259,7 @@ def groups():
     else:
         return redirect("/login")
 
-@app.route("/add_group", methods=["GET", "POST"])
+@app.route("/group/add", methods=["GET", "POST"])
 def add_group():
     if request.method == "POST":
         name = request.form["name"]
@@ -278,19 +279,17 @@ def edit_group(id):
     if request.method == "POST":
         name = request.form["name"]
         users = request.form.getlist("users")
-        group = Group.get_by_id(id)
-        group.name = name
-        group.users = users
-        group.update()
+        Group.update(id, name, users)
         return redirect("/groups")
     else:
         group = Group.get_by_id(id)
-        return render_template("edit_group.html", group=group)
+        users = mongo.db.users.find()
+        return render_template("edit_group.html", group=group, users=users)
 
-@app.route("/group/delete/<id>")
-def delete_group(id):
-    group = Group.get_by_id(id)
-    group.delete()
+
+@app.route("/group/delete/<id>",methods=["POST"])
+def delete_group(id):    
+    Group.delete(id)
     return redirect("/groups")
 
 
