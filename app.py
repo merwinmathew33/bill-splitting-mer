@@ -40,7 +40,7 @@ class User:
         if user:
             return User(user['username'], user['password'])
         else:
-            return user_user  
+            return None  
     
 
 class Bill:
@@ -53,10 +53,16 @@ class Bill:
         
         # retrieve user and group objects based on names
         user = mongo.db.users.find_one({'username': user_name})
+        if user:
+            self.user_id = user['_id']
+        else:
+            self.user_id = None
         group = mongo.db.groups.find_one({'name': group_name})
+        if group:
+            self.group_id = group['_id']
+        else:
+            self.group_id = None
         
-        self.user_id = user['_id']
-        self.group_id = group['_id']
         
 
     def save(self):
@@ -193,6 +199,9 @@ def add_bill():
         
         # create Bill object using user and group IDs
         if user and group:
+            flash("enter any one field(user name or group name)")
+            return render_template("add_bill.html")
+        if user or group:
             bill = Bill(amount, split_type, split_value, user_name, group_name)
             bill.save()
             return redirect("/bills")
@@ -283,40 +292,48 @@ def summary():
         am = {}
         peers = []
         for bill in bills:
-            if bill['user_id'] == user_id:
-                # user paid the bill
-                if bill['split_type'] == 'percentage':
-                    for user in bill['user_id']:
-                        if user != user_id:
-                            amount = (int(bill['amount']) * int(bill['split_value'])) / 100
-                            if user in debts:
-                                debts[user] += amount
-                            else:
-                                debts[user] = amount
-                            am.update({"Name":bill['user_name'], "Money":amount})
-                else:
-                    for user in bill['user_id']:
-                        if user != str(user_id):
-                            amount = bill['split_value']
-                            if user in debts:
-                                debts[user] += amount
-                            else:
-                                debts[user] = amount
-                            am.update({"Name":bill['user_name'], "Money":amount})
+            user = mongo.db.bills.find_one({'username': {'$ne': None}})
+            if user:
+                bills.user_id = user['_id']
             else:
-                # user owes money for the bill
-                
-                if bill['split_type'] == 'percentage':
-                    amount = (int(bill['amount']) * int(bill['split_value'])) / 100
-                    if bill['user_id'] in debts:
-                        debts[bill['user_id']] += amount
-                    else:  
-                        debts[(bill['user_id'])] = amount
-                    am.update({"Name":bill['user_name'], "Money":amount})  
+                bills.user_id = None
+            if bill['user_id']!= None:
+                if bill['user_id'] == user_id:
+                    # user paid the bill
+                    if bill['split_type'] == 'percentage':
+                        for user in bill['user_id']:
+                            if user != user_id:
+                                amount = (int(bill['amount']) * int(bill['split_value'])) / 100
+                                if user in debts:
+                                    debts[user] += amount
+                                else:
+                                    debts[user] = amount
+                                am.update({"Name":bill['user_name'], "Money":amount})
+                    else:
+                        for user in bill['user_id']:
+                            if user != str(user_id):
+                                amount = bill['split_value']
+                                if user in debts:
+                                    debts[user] += amount
+                                else:
+                                    debts[user] = amount
+                                am.update({"Name":bill['user_name'], "Money":amount})
+                else:
+                    # user owes money for the bill
+                    if bill['split_type'] == 'percentage':
+                        amount = (int(bill['amount']) * int(bill['split_value'])) / 100
+                        if bill['user_id'] in debts:
+                            debts[bill['user_id']] += amount
+                        else:  
+                            debts[(bill['user_id'])] = amount
+                        am.update({"Name":bill['user_name'], "Money":amount})  
         return render_template("summary.html", am=am)                    
     else:
         flash("You need to be logged in to view this page", "danger")
         return redirect(url_for("login"))
+
+
+            
 
 
 @app.route("/simplified_bills", methods=["GET", "POST"])

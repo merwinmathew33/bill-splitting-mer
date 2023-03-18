@@ -505,3 +505,7 @@ def summary():
     </table>
 </body>
 </html>
+
+else:
+            flash("You need to be logged in to view this page", "danger")
+            return redirect(url_for("login"))

@@ -5,6 +5,7 @@
 </head>
 <body>
 	<h1>Add Bill</h1>
+	<h2>Enter either user name or group name. Please dont write both </h2>
 	{% with messages = get_flashed_messages() %}
 		{% if messages %}
 			<ul>
@@ -25,9 +26,9 @@
 		<label for="split_value">Split Value:</label>
 		<input type="text" name="split_value" required><br><br>
 		<label for="user_name">User Name:</label>
-		<input type="text" name="user_name" required><br><br>
+		<input type="text" name="user_name"><br><br>
 		<label for="group_name">Group Name:</label>
-		<input type="text" name="group_name" required><br><br>
+		<input type="text" name="group_name" ><br><br>
 		<button type="submit">Add Bill</button>
 	</form>
 </body>
