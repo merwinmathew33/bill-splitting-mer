@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Group Summary</title>
+  </head>
+  <body>
+    <h1>Group Summary</h1>
+    <table>
+      <tr>
+        <th>Group Name</th>
+        <th>Total Amount</th>
+        <th>Debtors</th>
+      </tr>
+      {% for group in groups %}
+      <tr>
+        <td>{{ group.name }}</td>
+        <td>{{ group.total_amount }}</td>
+        <td>
+          <table>
+            {% for debtor, amount in debts[group._id].items() %}
+            <tr>
+              <td>{{ mongo.db.users.find_one({'_id': debtor}).username }}</td>
+              <td>{{ amount }}</td>
+            </tr>
+            {% endfor %}
+          </table>
+        </td>
+      </tr>
+      {% endfor %}
+    </table>
+  </body>
+</html>

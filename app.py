@@ -306,75 +306,39 @@ def summary():
                 
                     if user_id != str(user_id):
                         amount = bill['split_value']
-                        debts[user_id] += amount
+                        debts[user_id] += float(amount)
                         am.append({"Name": bill['user_name'], "Money": amount})
         return render_template("summary.html", am=am, debts=debts)
     else:
         flash("You need to be logged in to view this page", "danger")
         return redirect(url_for("login"))
 
-@app.route("/gsummary", methods=["GET", "POST"])
+@app.route("/gsummary")
 def gsummary():
     if 'username' in session:
         user_id = mongo.db.users.find_one({'username': session['username']})['_id']
-        bill_id = request.args.get('bill_id')
-        bills = Bill.get_all()
-        debts = {}
-        am = {}
-        peers = []
+        groups = mongo.db.groups.find({'users': {'$elemMatch': {'_id': user_id}}})
+        for group in groups:
+            bills = mongo.db.bills.find({'group_id': group['_id']})
+            user_ids = [member['_id'] for member in group['users']]
+        debts = defaultdict(float)
+        am = []
         for bill in bills:
-            user = mongo.db.bills.find_one({'group_name': {'$ne': None}})
-            if user:
-                bills.user_id = user['_id']
+            if bill['split_type'] == 'percentage':
+                amount = (int(bill['amount']) * int(bill['split_value'])) / 100
             else:
-                bills.user_id = None
-            if bill['user_id']!= None:
-                pipeline = [{"$match": {"_id": bill_id}},
-                {"$lookup": {
-                            "from": "groups",
-                            "localField": "group_id",
-                            "foreignField": "_id",
-                            "as": "group"
-                             }},
-                {"$unwind": "$group"},
-                {"$project": {
-                    "_id": 0,
-                    "user_ids": "$group.members.user_id"
-                }}
-                            ]
+                amount = bill['split_value']
+            share = amount / len(user_ids)
+            for user_id in user_ids:
+                if user_id != user_id:
+                    debts[user_id] += share 
+        return {'debts': dict(debts)}        
+                
+                
+    else:
+        flash("You need to be logged in to view this page", "danger")
+        return redirect(url_for("login"))
 
-                result = mongo.db.bills.aggregate(pipeline)
-                buser_ids = []
-                for r in result:
-                    user_ids += r['user_ids']    
-                for bid in buser_ids:
-                    if bid== user_id:
-                        if bill['split_type'] == 'percentage':
-                            for user in bid:
-                                if user != user_id:
-                                    amount = (int(bill['amount']) * int(bill['split_value'])) / 100
-                                    if user in debts:
-                                        debts[user] += amount
-                                    else:
-                                        debts[user] = amount
-                                    am.update({"Name":bill['user_name'], "Money":amount})
-                        else:
-                            for user in bid:
-                                if user != str(user_id):
-                                    amount = bill['split_value']
-                                    if user in debts:
-                                        debts[user] += amount
-                                    else:
-                                        debts[user] = amount
-                                    am.update({"Name":bill['user_name'], "Money":amount})
-                    else:
-                        if bill['split_type'] == 'percentage':
-                            amount = (int(bill['amount']) * int(bill['split_value'])) / 100
-                            if bill['user_id'] in debts:
-                                debts[bill['user_id']] += amount
-                            else:
-                                debts[(bill['user_id'])] = amount
-                            am.update({"Name":bill['user_name'], "Money":amount})                          
                     
                               
 
