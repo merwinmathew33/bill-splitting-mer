@@ -10,7 +10,10 @@
         <label for="amount">Amount:</label>
         <input type="text" name="amount" value="{{ bill.amount }}" required><br><br>
         <label for="split_type">Split Type:</label>
-        <input type="text" name="split_type" value="{{ bill.split_type }}" required><br><br>
+        <select name="split_type">
+            <option value="percentage">Percentage</option>
+            <option value="specific">specific</option>
+        </select><br>
         <label for="split_value">Split Value:</label>
         <input type="text" name="split_value" value="{{ bill.split_value }}" required><br><br>
         <label for="user_name">User Name:</label>

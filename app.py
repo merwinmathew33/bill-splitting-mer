@@ -345,31 +345,8 @@ def gsummary():
             
 
 
-@app.route("/simplified_bills", methods=["GET", "POST"])
-def simplified_bills():       
-    for bill in bills:
-        if bill['user_id'] == str(user_id):
-            for user in bill['split_value']:
-                if user != str(user_id) and user not in peers:
-                    peers.append(user)
-        elif str(user_id) in bill['split_value']:
-            if str(bill['user_id']) != str(user_id) and str(bill['user_id']) not in peers:
-                peers.append(str(bill['user_id']))
-        
-    for peer in peers:
-        if peer in debts and debts[peer] > 0 and str(peer) != str(user_id):
-            for peer2 in peers:
-                if peer != peer2 and peer2 in debts and debts[peer2] < 0 and debts[peer] != 0:
-                    if abs(debts[peer2]) > debts[peer]:
-                        debts[peer2] += debts[peer]
-                        print(f"You owe {peer2} ₹{abs(debts[peer])}")
-                        debts[peer] = 0
-                    else:
-                        debts[peer] += debts[peer2]
-                        print(f"You owe {peer2} ₹{abs(debts[peer2])}")
-                        debts[peer2] = 0
 
-    return render_template("settle_bills.html", debts=debts)
+    
     
 
 
