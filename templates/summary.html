@@ -1,25 +1,47 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Summary</title>
+	<title>Bills Summary</title>
 </head>
 <body>
-    <h1>Summary</h1>
-    <table>
-        <thead>
-            <tr>
-                <th>User</th>
-                <th>Amount owed</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for key,value in am.items() %}
-                <tr>
-                    <td>{{ key }}</td>
-                    <td>{{ value }}</td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+	{% if debts %}
+		<h1>Bills Summary</h1>
+        <h2>Debts people owe to you</h2>
+		<table>
+			<thead>
+				<tr>
+					<th>Name</th>
+					<th>Money</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for record in am %}
+				<tr>
+					<td>{{ record.Name }}</td>
+					<td>{{ record.Money }}</td>
+				</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+        <h2>Total Debts</h2>
+	<table>
+		<thead>
+			<tr>
+				
+				<th>Amount</th>
+			</tr>
+		</thead>
+		<tbody>
+			{% for user_id, amount in debts.items() %}
+			<tr>
+				
+				<td>{{ amount }}</td>
+			</tr>
+			{% endfor %}
+		</tbody>
+	</table>
+{% else %}
+	<p>No bills to display.</p>
+{% endif %}
 </body>
 </html>

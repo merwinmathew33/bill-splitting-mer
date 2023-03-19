@@ -2,6 +2,7 @@ from flask import Flask, render_template, url_for, redirect, request, session, f
 from flask_pymongo import PyMongo
 from bson.objectid import ObjectId
 import bcrypt
+from collections import defaultdict
 
 app = Flask(__name__)
 app.config["MONGO_URI"] = "mongodb://localhost:27017/myDatabase"
@@ -93,8 +94,8 @@ class Bill:
         return bill
 
     @staticmethod
-    def update(id, amount, split_type, split_value):
-        mongo.db.bills.update_one({'_id': ObjectId(id)}, {"$set": {'amount': amount, 'split_type': split_type, 'split_value': split_value}})
+    def update(id, amount, split_type, split_value, user_name,group_name):
+        mongo.db.bills.update_one({'_id': ObjectId(id)}, {"$set": {'amount': amount, 'split_type': split_type, 'split_value': split_value,'user_name':user_name,'group_name':group_name}})
     
     @staticmethod
     def delete(id):
@@ -129,7 +130,10 @@ class Group:
     @staticmethod
     def delete(id):
         mongo.db.groups.delete_one({'_id': ObjectId(id)})
-    
+
+
+
+     
 
 # Define routes and views
 @app.route("/")
@@ -155,8 +159,10 @@ def login():
 
 @app.route("/logout")
 def logout():
-    session.pop('username', user_id)
-    return redirect("/luser")
+    session.pop('username', None)
+    
+    return redirect(url_for("login"))
+
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
@@ -224,7 +230,7 @@ def edit_bill(id):
         user_name = request.form.get("user_name")
         group_name = request.form.get("group_name")
         
-        Bill.update(id, amount, split_type, split_value)
+        Bill.update(id, amount, split_type, split_value, user_name,group_name)
         return redirect("/bills")
     else:
         bill = Bill.get_by_id(id)
@@ -283,55 +289,26 @@ def delete_group(id):
 
 
 
-@app.route("/summary", methods=["GET", "POST"])
+@app.route("/summary")
 def summary():
     if 'username' in session:
         user_id = mongo.db.users.find_one({'username': session['username']})['_id']
-        bill_id = request.args.get('bill_id')
-        bills = Bill.get_all()
-        debts = {}
-        am = {}
-        peers = []
+        bills = mongo.db.bills.find({'user_id': user_id})
+        debts = defaultdict(float)
+        am = []
         for bill in bills:
-            user = mongo.db.bills.find_one({'user_name': {'$ne': None}})
-            if user:
-                bills.user_id = user['_id']
-            else:
-                bills.user_id = None
-            if bill['user_id']!= None:
-                if bill['user_id'] == user_id:
-                    # user paid the bill
-                    if bill['split_type'] == 'percentage':
-                        for user in str(bill['user_id']):
-                            if user != user_id:
-                                amount = (int(bill['amount']) * int(bill['split_value'])) / 100
-                                if user in debts:
-                                    debts[user] += amount
-                                else:
-                                    debts[user] = amount
-                                am.update({"Name":bill['user_name'], "Money":amount})
-                    else:
-                        for user in bill['user_id']:
-                            if user != str(user_id):
-                                amount = bill['split_value']
-                                if user in debts:
-                                    debts[user] += amount
-                                else:
-                                    debts[user] = amount
-                                am.update({"Name":bill['user_name'], "Money":amount})
-                else:
-                    # user owes money for the bill
-                    if bill['split_type'] == 'percentage':
+            if bill['split_type'] == 'percentage':
+                    if user_id != str(user_id):
                         amount = (int(bill['amount']) * int(bill['split_value'])) / 100
-                        if bill['user_id'] in debts:
-                            debts[bill['user_id']] += amount
-                        else:  
-                            debts[(bill['user_id'])] = amount
-                        am.update({"Name":bill['user_name'], "Money":amount})  
-            
-                                 
-
-        return render_template("summary.html", am=am)                    
+                        debts[user_id] += amount
+                        am.append({"Name": bill['user_name'], "Money": amount})
+            else:
+                
+                    if user_id != str(user_id):
+                        amount = bill['split_value']
+                        debts[user_id] += amount
+                        am.append({"Name": bill['user_name'], "Money": amount})
+        return render_template("summary.html", am=am, debts=debts)
     else:
         flash("You need to be logged in to view this page", "danger")
         return redirect(url_for("login"))

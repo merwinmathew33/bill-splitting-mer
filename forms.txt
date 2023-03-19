@@ -509,3 +509,72 @@ def summary():
 else:
             flash("You need to be logged in to view this page", "danger")
             return redirect(url_for("login"))
+
+
+class Debt:
+    def __init__(self, amount, split_type, split_value, user_name, group_name):
+        self.amount = amount
+        self.split_type = split_type
+        self.split_value = split_value
+        self.user_name = user_name
+        self.group_name = group_name
+        
+        # retrieve user and group objects based on names
+        user = mongo.db.users.find_one({'username': user_name})
+        if user:
+            self.user_id = user['_id']
+        else:
+            self.user_id = None
+        group = mongo.db.groups.find_one({'name': group_name})
+        if group:
+            self.group_id = group['_id']
+        else:
+            self.group_id = None
+        
+        
+
+    def save(self):
+        
+            debt = {
+                'Money': self.amount,
+                'user_name': self.user_name,                
+            }
+            mongo.db.debts.insert_one(debt)
+
+        
+
+    @staticmethod
+    def get_all():
+        debts = mongo.db.debts.find()
+        return debts
+
+    @staticmethod
+    def get_by_id(id):
+        debts = mongo.db.bills.find_one({'_id': ObjectId(id)})
+
+        return debts
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Summary</title>
+</head>
+<body>
+    <h1>Summary</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>User</th>
+                <th>Amount owed</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for key,value in am.items() %}
+                <tr>
+                    <td>{{ key }}</td>
+                    <td>{{ value }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
