@@ -44,4 +44,5 @@ This is a simple web application for splitting bills among a group of users. The
 1. Assign the bill to a group or an user and pay the bill.
 1. View the summary page to see debts owed by and to each group member.
 ## Video Explanation
-I have created a video explaining all essential features in this application. Click [here](https://drive.google.com/file/d/17NNVcN71e7NvEPnHmGFrhXM4e3m-nKZz/view?usp=sharing) to view it. 
+I have created a video explaining all essential features in this application. Click [here](https://drive.google.com/file/d/17NNVcN71e7NvEPnHmGFrhXM4e3m-nKZz/view?usp=sharing) to view it. \
+If there is any issue in viewing that link, please check [here](https://youtu.be/jHaSEgAnun0)
